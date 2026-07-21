@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Decision Coin — settle it, or notice what you already know</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #1c1a17;
+    --parchment: #ece5d6;
+    --parchment-dim: #b8ae99;
+    --brass: #b8863b;
+    --brass-bright: #d9a94f;
+    --rust: #9a3324;
+    --line: rgba(236,229,214,0.14);
+    --shadow: rgba(0,0,0,0.45);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+  }
+
+  body {
+    background:
+      radial-gradient(ellipse at 50% -10%, #2a251e 0%, var(--ink) 55%);
+    color: var(--parchment);
+    font-family: 'Inter', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 6vh 20px 40px;
+    overflow-x: hidden;
+  }
+
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--brass-bright);
+    margin-bottom: 14px;
+    text-align: center;
+  }
+
+  h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(28px, 5.5vw, 44px);
+    text-align: center;
+    margin: 0 0 10px;
+    color: var(--parchment);
+    letter-spacing: -0.01em;
+  }
+
+  .sub {
+    text-align: center;
+    color: var(--parchment-dim);
+    max-width: 480px;
+    font-size: 15px;
+    line-height: 1.55;
+    margin: 0 0 44px;
+  }
+
+  .stage {
+    width: 100%;
+    max-width: 460px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ---- Setup form ---- */
+  .setup {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .option-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .option-row .tag {
+    position: absolute;
+    left: 18px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--brass);
+    pointer-events: none;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    background: rgba(236,229,214,0.05);
+    border: 1px solid var(--line);
+    color: var(--parchment);
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    padding: 16px 18px 16px 46px;
+    border-radius: 10px;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  input[type="text"]:focus {
+    border-color: var(--brass);
+    background: rgba(236,229,214,0.08);
+  }
+
+  input[type="text"]::placeholder { color: var(--parchment-dim); }
+
+  .versus {
+    text-align: center;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    color: var(--parchment-dim);
+    font-size: 13px;
+    margin: -2px 0;
+  }
+
+  button {
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    border: none;
+  }
+
+  .flip-btn {
+    margin-top: 10px;
+    background: linear-gradient(180deg, var(--brass-bright), var(--brass));
+    color: #201a0f;
+    font-weight: 600;
+    font-size: 16px;
+    padding: 16px 20px;
+    border-radius: 10px;
+    letter-spacing: 0.01em;
+    box-shadow: 0 8px 20px -8px rgba(184,134,59,0.6);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .flip-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -8px rgba(184,134,59,0.75); }
+  .flip-btn:active { transform: translateY(0); }
+  .flip-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .hint {
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--parchment-dim);
+    margin-top: 2px;
+  }
+
+  /* ---- Pause / gut-check moment ---- */
+  .pause {
+    display: none;
+    width: 100%;
+    text-align: center;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .pause.active { display: block; }
+
+  .pause .coin-mini {
+    width: 54px; height: 54px;
+    margin: 0 auto 22px;
+    border-radius: 50%;
+    border: 2px solid var(--brass);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    color: var(--brass-bright);
+    font-size: 22px;
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+
+  .pause p.q {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(19px, 4vw, 24px);
+    line-height: 1.4;
+    color: var(--parchment);
+    max-width: 380px;
+    margin: 0 auto 30px;
+  }
+
+  .pause-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .link-btn {
+    background: none;
+    color: var(--parchment-dim);
+    font-size: 14px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 6px;
+  }
+  .link-btn:hover { color: var(--parchment); }
+
+  /* ---- Coin ---- */
+  .coin-wrap {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+  }
+  .coin-wrap.active { display: flex; animation: fadeUp 0.4s ease both; }
+
+  .coin-scene {
+    width: 190px;
+    height: 190px;
+    perspective: 1000px;
+    margin-bottom: 34px;
+  }
+
+  .coin {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 2.2s cubic-bezier(0.2, 0.9, 0.15, 1);
+  }
+
+  .coin.spinning {
+    transform: rotateY(1800deg);
+  }
+
+  .coin.result-a { transform: rotateY(1800deg); }
+  .coin.result-b { transform: rotateY(1980deg); }
+
+  .face {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 22px;
+    text-align: center;
+    background:
+      radial-gradient(circle at 32% 28%, #f0d68e, #d9a94f 38%, #a5732c 78%, #7a5420 100%);
+    border: 3px solid #7a5420;
+    box-shadow:
+      inset 0 0 0 6px rgba(0,0,0,0.12),
+      inset 0 0 22px rgba(0,0,0,0.25),
+      0 18px 40px -14px rgba(0,0,0,0.7);
+  }
+
+  .face .word {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 15px;
+    color: #2b1c08;
+    line-height: 1.25;
+    max-width: 130px;
+    word-break: break-word;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.25);
+  }
+
+  .face.back {
+    transform: rotateY(180deg);
+  }
+
+  .result {
+    text-align: center;
+  }
+
+  .result .lead {
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--brass-bright);
+    margin-bottom: 10px;
+  }
+
+  .result .call {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(24px, 5vw, 32px);
+    color: var(--parchment);
+    margin: 0 0 22px;
+  }
+
+  .again-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .ghost-btn {
+    background: rgba(236,229,214,0.06);
+    border: 1px solid var(--line);
+    color: var(--parchment);
+    font-size: 14px;
+    padding: 11px 18px;
+    border-radius: 8px;
+    transition: background 0.15s;
+  }
+  .ghost-btn:hover { background: rgba(236,229,214,0.12); }
+
+  footer {
+    margin-top: 60px;
+    font-size: 11.5px;
+    color: rgba(236,229,214,0.3);
+    text-align: center;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(184,134,59,0.35); }
+    50% { box-shadow: 0 0 0 10px rgba(184,134,59,0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .coin { transition: none; }
+    .pause .coin-mini { animation: none; }
+  }
+
+  .error {
+    display: none;
+    color: var(--rust);
+    font-size: 13px;
+    text-align: center;
+    margin-top: -4px;
+  }
+  .error.active { display: block; }
+</style>
+</head>
+<body>
+
+  <div class="eyebrow">Decision Coin</div>
+  <h1>Can't choose?<br>Let's find out what you already know.</h1>
+  <p class="sub">Type your two options. Before the coin lands, it'll ask what you're hoping for — that's usually the real answer.</p>
+
+  <div class="stage">
+
+    <!-- Setup -->
+    <div class="setup" id="setup">
+      <div class="option-row">
+        <span class="tag">A —</span>
+        <input type="text" id="optionA" placeholder="First option" maxlength="60" />
+      </div>
+      <div class="versus">or</div>
+      <div class="option-row">
+        <span class="tag">B —</span>
+        <input type="text" id="optionB" placeholder="Second option" maxlength="60" />
+      </div>
+      <p class="error" id="formError">Fill in both options — the coin needs two sides.</p>
+      <button class="flip-btn" id="startBtn">Flip the coin</button>
+      <p class="hint">Takes two seconds. Costs nothing. Might tell you something.</p>
+    </div>
+
+    <!-- Gut-check pause -->
+    <div class="pause" id="pause">
+      <div class="coin-mini">?</div>
+      <p class="q" id="pauseQuestion"></p>
+      <div class="pause-actions">
+        <button class="flip-btn" id="revealBtn">Show me the coin</button>
+        <button class="link-btn" id="restartFromPause">Start over</button>
+      </div>
+    </div>
+
+    <!-- Coin + result -->
+    <div class="coin-wrap" id="coinWrap">
+      <div class="coin-scene">
+        <div class="coin" id="coin">
+          <div class="face front">
+            <span class="word" id="faceAWord">A</span>
+          </div>
+          <div class="face back">
+            <span class="word" id="faceBWord">B</span>
+          </div>
+        </div>
+      </div>
+      <div class="result" id="resultBlock" style="display:none;">
+        <div class="lead">The coin says</div>
+        <p class="call" id="resultText"></p>
+        <div class="again-row">
+          <button class="ghost-btn" id="flipAgainBtn">Flip again</button>
+          <button class="ghost-btn" id="newOptionsBtn">New options</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>Genuinely random. The question before the flip is the part that actually helps.</footer>
+
+<script>
+  const setupEl = document.getElementById('setup');
+  const pauseEl = document.getElementById('pause');
+  const coinWrapEl = document.getElementById('coinWrap');
+  const optionAInput = document.getElementById('optionA');
+  const optionBInput = document.getElementById('optionB');
+  const startBtn = document.getElementById('startBtn');
+  const formError = document.getElementById('formError');
+  const pauseQuestion = document.getElementById('pauseQuestion');
+  const revealBtn = document.getElementById('revealBtn');
+  const restartFromPause = document.getElementById('restartFromPause');
+  const coin = document.getElementById('coin');
+  const faceAWord = document.getElementById('faceAWord');
+  const faceBWord = document.getElementById('faceBWord');
+  const resultBlock = document.getElementById('resultBlock');
+  const resultText = document.getElementById('resultText');
+  const flipAgainBtn = document.getElementById('flipAgainBtn');
+  const newOptionsBtn = document.getElementById('newOptionsBtn');
+
+  const gutCheckQuestions = [
+    "Before it lands — which one made your stomach drop just now?",
+    "Quick, no thinking: which one did you want to hear?",
+    "If a friend asked you right now, which one would you blurt out?",
+    "Which answer would disappoint you a little?",
+    "Which one have you already half-decided, if you're honest?"
+  ];
+
+  let optA = "";
+  let optB = "";
+
+  function showScreen(name) {
+    setupEl.style.display = name === 'setup' ? 'flex' : 'none';
+    pauseEl.classList.toggle('active', name === 'pause');
+    coinWrapEl.classList.toggle('active', name === 'coin');
+    if (name !== 'coin') {
+      resultBlock.style.display = 'none';
+    }
+  }
+
+  function startFlow() {
+    const a = optionAInput.value.trim();
+    const b = optionBInput.value.trim();
+    if (!a || !b) {
+      formError.classList.add('active');
+      return;
+    }
+    formError.classList.remove('active');
+    optA = a;
+    optB = b;
+    faceAWord.textContent = optA;
+    faceBWord.textContent = optB;
+    pauseQuestion.textContent = gutCheckQuestions[Math.floor(Math.random() * gutCheckQuestions.length)];
+    showScreen('pause');
+  }
+
+  function doFlip() {
+    showScreen('coin');
+    resultBlock.style.display = 'none';
+    coin.classList.remove('result-a', 'result-b');
+    // force reflow so the animation can restart
+    void coin.offsetWidth;
+
+    const landsOnA = Math.random() < 0.5;
+    coin.classList.add(landsOnA ? 'result-a' : 'result-b');
+
+    setTimeout(() => {
+      resultText.textContent = landsOnA ? optA : optB;
+      resultBlock.style.display = 'block';
+    }, 2300);
+  }
+
+  startBtn.addEventListener('click', startFlow);
+  [optionAInput, optionBInput].forEach(input => {
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') startFlow();
+    });
+    input.addEventListener('input', () => formError.classList.remove('active'));
+  });
+
+  revealBtn.addEventListener('click', doFlip);
+  restartFromPause.addEventListener('click', () => showScreen('setup'));
+
+  flipAgainBtn.addEventListener('click', doFlip);
+  newOptionsBtn.addEventListener('click', () => {
+    optionAInput.value = "";
+    optionBInput.value = "";
+    showScreen('setup');
+    optionAInput.focus();
+  });
+</script>
+
+</body>
+</html>
